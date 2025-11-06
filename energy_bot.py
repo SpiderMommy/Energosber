@@ -2,7 +2,7 @@ import os
 import logging
 import random
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 # Настройка логирования
 logging.basicConfig(
@@ -12,9 +12,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Токен бота
-TOKEN = "7833930614:AAET_Lq5B4itg-1Dwzi2Ne3g-UylYK9jUQE"
+BOT_TOKEN = "7833930614:AAET_Lq5B4itg-1Dwzi2Ne3g-UylYK9jUQE"
 
-# Советы по энергосбережению
+# Данные бота
 ENERGY_TIPS = {
     "электричество": [
         "🔌 Выключай свет, когда выходишь из комнаты",
@@ -46,94 +46,80 @@ ENERGY_TIPS = {
     ]
 }
 
-# Факты об энергосбережении
 FACTS = [
-    "💡 Знаешь ли ты? Энергосберегающая лампа служит в 8 раз дольше обычной!",
+    "💡 Энергосберегающая лампа служит в 8 раз дольше обычной!",
     "💧 Выключая воду при чистке зубов, ты экономишь до 10 литров воды!",
     "🌍 Экономя энергию, ты помогаешь сохранить природу Беларуси!",
     "💰 Семья из 3 человек может сэкономить до 50% на коммунальных услугах!",
-    "🔋 Батарейки, выброшенные в природу, загрязняют 20 м² земли!",
-    "📊 Беларусь экономит энергию, как 2 атомные электростанции в год!",
-    "🚲 1 сэкономленный кВт·ч = 10 км на велосипеде без вреда для природы!"
+    "🔋 Батарейки, выброшенные в природу, загрязняют 20 м² земли!"
 ]
 
-# Команда /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Команды бота
+def start(update: Update, context: CallbackContext):
     user = update.effective_user
     welcome_text = f"""
 🤖 Привет, {user.first_name}! Я бот «Энергосберегайка»!
 
 Я помогу тебе узнать:
 • Как экономить энергию дома и в школе
-• Интересные факты об энергосбережении
+• Интересные факты об энергосбережении  
 • Почему это важно для Беларуси
 
 Выбери, что тебя интересует! 🌟
     """
     
     keyboard = [
-        [KeyboardButton("💡 Советы по экономии"), KeyboardButton("🌍 Интересные факты")],
-        [KeyboardButton("🎮 Игра-викторина"), KeyboardButton("🏆 Эко-челлендж")],
-        [KeyboardButton("📚 Полезные ссылки"), KeyboardButton("ℹ️ О проекте")]
+        ["💡 Советы", "🌍 Факты"],
+        ["🎮 Викторина", "🏆 Челлендж"],
+        ["📚 Ссылки", "ℹ️ О проекте"]
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
-    await update.message.reply_text(welcome_text, reply_markup=reply_markup)
+    update.message.reply_text(welcome_text, reply_markup=reply_markup)
 
-# Команда /help
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def help_command(update: Update, context: CallbackContext):
     help_text = """
 📖 Доступные команды:
 
 /start - Запустить бота
-/help - Помощь и команды
+/help - Помощь
 
 Или используй кнопки меню!
     """
-    await update.message.reply_text(help_text)
+    update.message.reply_text(help_text)
 
-# Обработчик кнопки "Советы по экономии"
-async def show_tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def show_tips_menu(update: Update, context: CallbackContext):
     tips_keyboard = [
-        [KeyboardButton("⚡ Электричество"), KeyboardButton("💧 Вода")],
-        [KeyboardButton("🔥 Отопление"), KeyboardButton("📺 Приборы")],
-        [KeyboardButton("🔙 Назад")]
+        ["⚡ Электричество", "💧 Вода"],
+        ["🔥 Отопление", "📺 Приборы"],
+        ["🔙 Назад"]
     ]
     reply_markup = ReplyKeyboardMarkup(tips_keyboard, resize_keyboard=True)
-    
-    await update.message.reply_text("Выбери категорию советов:", reply_markup=reply_markup)
+    update.message.reply_text("Выбери категорию советов:", reply_markup=reply_markup)
 
-# Показ конкретных советов
-async def show_category_tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    category_text = update.message.text
+def show_tips(update: Update, context: CallbackContext):
+    text = update.message.text
+    category_map = {
+        "⚡ Электричество": "электричество",
+        "💧 Вода": "вода", 
+        "🔥 Отопление": "отопление",
+        "📺 Приборы": "приборы"
+    }
     
-    if "⚡" in category_text:
-        tips = ENERGY_TIPS["электричество"]
-        category_name = "⚡ Электричество"
-    elif "💧" in category_text:
-        tips = ENERGY_TIPS["вода"]
-        category_name = "💧 Вода"
-    elif "🔥" in category_text:
-        tips = ENERGY_TIPS["отопление"]
-        category_name = "🔥 Отопление"
-    elif "📺" in category_text:
-        tips = ENERGY_TIPS["приборы"]
-        category_name = "📺 Приборы"
+    if text in category_map:
+        category = category_map[text]
+        tips = ENERGY_TIPS[category]
+        tips_text = f"{text} - полезные советы:\n\n" + "\n".join([f"• {tip}" for tip in tips])
+        update.message.reply_text(tips_text)
     else:
-        await update.message.reply_text("Пожалуйста, выбери категорию из кнопок ниже")
-        return
-    
-    tips_text = f"{category_name} - полезные советы:\n\n" + "\n".join([f"• {tip}" for tip in tips])
-    await update.message.reply_text(tips_text)
+        update.message.reply_text("Пожалуйста, выбери категорию из меню")
 
-# Обработчик кнопки "Интересные факты"
-async def show_facts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def show_fact(update: Update, context: CallbackContext):
     fact = random.choice(FACTS)
-    await update.message.reply_text(fact)
+    update.message.reply_text(fact)
 
-# Обработчик кнопки "Игра-викторина"
-async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    quiz_questions = [
+def start_quiz(update: Update, context: CallbackContext):
+    questions = [
         {
             "question": "Что экономит больше энергии?",
             "options": ["Энергосберегающая лампа", "Обычная лампа", "Свеча"],
@@ -141,7 +127,7 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         },
         {
             "question": "Как правильно проветривать комнату?",
-            "options": ["Открыть окно на 2 часа", "Открыть на 5-10 минут полностью", "Не проветривать вообще"],
+            "options": ["Открыть окно на 2 часа", "Открыть на 5-10 минут полностью", "Не проветривать"],
             "answer": 1
         },
         {
@@ -151,162 +137,168 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
     ]
     
-    context.user_data['quiz'] = quiz_questions
-    context.user_data['current_question'] = 0
-    context.user_data['score'] = 0
+    context.user_data['quiz_questions'] = questions
+    context.user_data['quiz_index'] = 0
+    context.user_data['quiz_score'] = 0
     
-    await ask_question(update, context)
+    ask_quiz_question(update, context)
 
-async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    quiz = context.user_data.get('quiz', [])
-    current = context.user_data.get('current_question', 0)
+def ask_quiz_question(update: Update, context: CallbackContext):
+    questions = context.user_data.get('quiz_questions', [])
+    index = context.user_data.get('quiz_index', 0)
     
-    if current >= len(quiz):
-        score = context.user_data.get('score', 0)
-        total = len(quiz)
-        result_text = "🎉 Викторина завершена!\n"
-        result_text += f"Твой результат: {score}/{total}\n"
+    if index >= len(questions):
+        score = context.user_data.get('quiz_score', 0)
+        total = len(questions)
+        result_text = f"🎉 Викторина завершена!\nТвой результат: {score}/{total}\n"
         
         if score == total:
             result_text += "Отлично! Ты настоящий энергосберегатель! 🌟"
         else:
             result_text += "Хорошо, но есть куда расти! 📚"
             
-        await update.message.reply_text(result_text)
-        await start(update, context)
+        update.message.reply_text(result_text)
+        start(update, context)
         return
     
-    question_data = quiz[current]
-    options = "\n".join([f"{i+1}. {opt}" for i, opt in enumerate(question_data['options'])])
-    quiz_text = f"❓ Вопрос {current + 1}:\n{question_data['question']}\n\n{options}"
+    question = questions[index]
+    options_text = "\n".join([f"{i+1}. {opt}" for i, opt in enumerate(question['options'])])
+    quiz_text = f"❓ Вопрос {index + 1}:\n{question['question']}\n\n{options_text}"
     
-    keyboard = [[KeyboardButton(str(i+1)) for i in range(len(question_data['options']))]]
-    keyboard.append([KeyboardButton("🔙 Отмена")])
+    keyboard = [[str(i+1) for i in range(len(question['options']))]]
+    keyboard.append(["🔙 Отмена"])
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     
-    await update.message.reply_text(quiz_text, reply_markup=reply_markup)
+    update.message.reply_text(quiz_text, reply_mmarkup=reply_markup)
 
-async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def handle_quiz_answer(update: Update, context: CallbackContext):
     answer = update.message.text
     
     if answer == "🔙 Отмена":
-        await start(update, context)
+        start(update, context)
         return
     
     if not answer.isdigit():
-        await update.message.reply_text("Пожалуйста, выбери номер ответа!")
+        update.message.reply_text("Пожалуйста, выбери номер ответа (1, 2, 3)")
         return
     
-    user_answer = int(answer) - 1
-    current = context.user_data.get('current_question', 0)
-    quiz = context.user_data.get('quiz', [])
+    questions = context.user_data.get('quiz_questions', [])
+    index = context.user_data.get('quiz_index', 0)
     
-    if current < len(quiz):
-        if user_answer == quiz[current]['answer']:
-            context.user_data['score'] = context.user_data.get('score', 0) + 1
-            await update.message.reply_text("✅ Правильно! Молодец!")
-        else:
-            correct_answer = quiz[current]['options'][quiz[current]['answer']]
-            await update.message.reply_text(f"❌ Неправильно. Правильный ответ: {correct_answer}")
+    if index < len(questions):
+        user_answer = int(answer) - 1
+        correct_answer = questions[index]['answer']
         
-        context.user_data['current_question'] = current + 1
-        await ask_question(update, context)
+        if user_answer == correct_answer:
+            context.user_data['quiz_score'] = context.user_data.get('quiz_score', 0) + 1
+            update.message.reply_text("✅ Правильно! Молодец!")
+        else:
+            correct_text = questions[index]['options'][correct_answer]
+            update.message.reply_text(f"❌ Неправильно. Правильный ответ: {correct_text}")
+        
+        context.user_data['quiz_index'] = index + 1
+        ask_quiz_question(update, context)
 
-# Обработчик кнопки "Эко-челлендж"
-async def start_challenge(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def start_challenge(update: Update, context: CallbackContext):
     challenges = [
-        "🎯 Задание на сегодня: выключать свет, выходя из комнаты",
-        "🎯 Задание: принимать душ не более 5 минут",
-        "🎯 Задание: вынуть все неиспользуемые зарядки из розеток",
-        "🎯 Задание: рассказать другу о одном способе экономии энергии",
+        "🎯 Задание: выключать свет, выходя из комнаты",
+        "🎯 Задание: принимать душ не более 5 минут", 
+        "🎯 Задание: вынуть неиспользуемые зарядки из розеток",
+        "🎯 Задание: рассказать другу о способе экономии энергии",
         "🎯 Задание: проверить, нет ли протекающих кранов"
     ]
     
     challenge = random.choice(challenges)
-    
-    await update.message.reply_text(f"🏆 Эко-челлендж!\n\n{challenge}\n\nВыполни задание и возвращайся за новым! 🌟")
+    update.message.reply_text(f"🏆 Эко-челлендж!\n\n{challenge}\n\nВыполни и возвращайся за новым! 🌟")
 
-# Обработчик кнопки "Полезные ссылки"
-async def show_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def show_links(update: Update, context: CallbackContext):
     links_text = """
-📚 Полезные ресурсы об энергосбережении:
+📚 Полезные ресурсы:
 
-• minenergo.gov.by - Министерство энергетики Беларуси
-• energoeffect.gov.by - Департамент по энергоэффективности
-• un.org/sustainabledevelopment - Цели устойчивого развития ООН
-• greenbelarus.info - Экологические инициативы в Беларуси
-• @energoeffectgovby - Официальный telegram-канал Департамента по энергоэффективности
+• energo.gov.by - Министерство энергетики Беларуси
+• energosbereg.by - Центр энергосбережения
+• greenbelarus.info - Экологические инициативы
+
+💚 Сохраним энергию для будущего Беларуси!
     """
-    await update.message.reply_text(links_text)
+    update.message.reply_text(links_text)
 
-# Обработчик кнопки "О проекте"
-async def about_project(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def about_project(update: Update, context: CallbackContext):
     about_text = """
 ℹ️ О проекте «Энергосберегайка»
 
-Этот бот создан для школьников Беларуси, чтобы:
-• Научить экономить энергию и ресурсы
-• Показать важность энергосбережения
-• Сделать обучение интересным и интерактивным
+Бот для школьников Беларуси:
+• Учим экономить энергию
+• Показываем важность энергосбережения  
+• Делаем обучение интересным
 
-💚 Сохраним энергию для будущего Беларуси вместе!
+Для связи: ваш_email@example.com
     """
-    await update.message.reply_text(about_text)
+    update.message.reply_text(about_text)
 
-# Обработчик текстовых сообщений
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Главный обработчик сообщений
+def handle_message(update: Update, context: CallbackContext):
     text = update.message.text
     
-    if text == "💡 Советы по экономии":
-        await show_tips(update, context)
-    elif text == "🌍 Интересные факты":
-        await show_facts(update, context)
-    elif text == "🎮 Игра-викторина":
-        await start_quiz(update, context)
-    elif text == "🏆 Эко-челлендж":
-        await start_challenge(update, context)
-    elif text == "📚 Полезные ссылки":
-        await show_links(update, context)
+    if text == "💡 Советы":
+        show_tips_menu(update, context)
+    elif text == "🌍 Факты":
+        show_fact(update, context)
+    elif text == "🎮 Викторина":
+        start_quiz(update, context)
+    elif text == "🏆 Челлендж":
+        start_challenge(update, context)
+    elif text == "📚 Ссылки":
+        show_links(update, context)
     elif text == "ℹ️ О проекте":
-        await about_project(update, context)
-    elif text in ["🔙 Назад", "🔙 Отмена"]:
-        await start(update, context)
+        about_project(update, context)
     elif text in ["⚡ Электричество", "💧 Вода", "🔥 Отопление", "📺 Приборы"]:
-        await show_category_tips(update, context)
-    elif text.isdigit() and 'quiz' in context.user_data:
-        await handle_quiz_answer(update, context)
+        show_tips(update, context)
+    elif text == "🔙 Назад":
+        start(update, context)
+    elif text.isdigit() and 'quiz_questions' in context.user_data:
+        handle_quiz_answer(update, context)
     else:
-        await update.message.reply_text("Используй кнопки меню или напиши /help для помощи!")
+        update.message.reply_text("Используй кнопки меню или /help для помощи!")
 
-# Обработка ошибок
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+def error_handler(update: Update, context: CallbackContext):
     logger.error(f"Ошибка: {context.error}")
 
 def main():
     print("🚀 Запуск бота Энергосберегайка...")
     
     try:
-        # Создаем приложение
-        application = Application.builder().token(TOKEN).build()
+        # Создаем Updater и передаем ему токен бота
+        updater = Updater(BOT_TOKEN, use_context=True)
         
-        # Добавляем обработчики
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CommandHandler("help", help_command))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        application.add_error_handler(error_handler)
+        # Получаем диспетчер для регистрации обработчиков
+        dispatcher = updater.dispatcher
+        
+        # Добавляем обработчики команд
+        dispatcher.add_handler(CommandHandler("start", start))
+        dispatcher.add_handler(CommandHandler("help", help_command))
+        
+        # Добавляем обработчик текстовых сообщений
+        dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+        
+        # Добавляем обработчик ошибок
+        dispatcher.add_error_handler(error_handler)
         
         # Запускаем бота
         print("=" * 50)
         print("🤖 Бот 'Энергосберегайка' успешно запущен!")
         print("📍 Работает на Render.com")
-        print("⚡ Готов к приему сообщений в Telegram")
+        print("⚡ Готов к приему сообщений")
         print("=" * 50)
         
         # Запускаем polling
-        application.run_polling()
+        updater.start_polling()
+        
+        # Запускаем бота до тех пор, пока пользователь не остановит его
+        updater.idle()
         
     except Exception as e:
-        print(f"❌ Ошибка при запуске бота: {e}")
+        print(f"❌ Ошибка при запуске: {e}")
         logger.error(f"Ошибка при запуске: {e}")
 
 if __name__ == '__main__':
