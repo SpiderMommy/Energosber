@@ -1,8 +1,21 @@
 import os
 import logging
 import random
+import threading
+from flask import Flask
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+# Создаем Flask приложение для здоровья сервиса
+app = Flask(__name__)
+
+@app.route('/')
+def health_check():
+    return "🤖 Бот Энергосберегайка работает! Status: OK"
+
+def run_flask():
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
 
 # Настройка логирования
 logging.basicConfig(
@@ -10,7 +23,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
-
 # Токен бота
 BOT_TOKEN = "7833930614:AAET_Lq5B4itg-1Dwzi2Ne3g-UylYK9jUQE"
 
@@ -285,7 +297,17 @@ def main():
         application.run_polling()
         
     except Exception as e:
-        print(f"❌ Ошибка при запуске: {e}")
+        print(f"❌ Ошибка при запуске бота: {e}")
+
+def main():
+    """Основная функция - запускает и бота, и HTTP-сервер"""
+    # Запускаем Flask в отдельном потоке
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    print("🌐 HTTP-сервер запущен для проверки здоровья")
+    
+    # Запускаем бота в основном потоке
+    run_bot()
 
 if __name__ == '__main__':
     main()
