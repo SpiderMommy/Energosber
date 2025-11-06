@@ -274,7 +274,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Ошибка: {context.error}")
 
-def main():
+def run_bot():
     print("🚀 Запуск бота Энергосберегайка...")
     
     try:
@@ -311,3 +311,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
