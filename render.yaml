@@ -5,6 +5,3 @@ services:
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: python energy_bot.py
-    envVars:
-      - key: TELEGRAM_BOT_TOKEN
-        value: 7833930614:AAET_Lq5B4itg-1Dwzi2Ne3g-UylYK9jUQE
