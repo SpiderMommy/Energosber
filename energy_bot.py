@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
@@ -327,3 +328,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+
