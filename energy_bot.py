@@ -337,7 +337,13 @@ async def show_tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
         category = category_map[text]
         tips = ENERGY_TIPS[category]
         tips_text = f"{text} - полезные советы:\n\n" + "\n".join([f"• {tip}" for tip in tips])
-        await update.message.reply_text(tips_text)
+        
+        # Если текст слишком длинный, разбиваем на части
+        if len(tips_text) > 4096:
+            for i in range(0, len(tips_text), 4096):
+                await update.message.reply_text(tips_text[i:i+4096])
+        else:
+            await update.message.reply_text(tips_text)
     else:
         await update.message.reply_text("Пожалуйста, выбери категорию из меню")
         
@@ -465,12 +471,12 @@ async def ask_quiz_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     answer = update.message.text
     
-    if answer == "🔙 Отмена":
+    if answer in ["🔙 Отмена", "🔙 отмена", "отмена"]:
         await start(update, context)
         return
     
     if not answer.isdigit():
-        await update.message.reply_text("Пожалуйста, выбери номер ответа!")
+        await update.message.reply_text("Пожалуйста, выбери номер ответа (1, 2, 3)")
         return
     
     questions = context.user_data.get('quiz_questions', [])
@@ -542,39 +548,34 @@ async def about_project(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка текстовых вопросов пользователя"""
-    user_message = update.message.text.lower().strip()
+    user_message = update.message.text.strip()
+    
+    # ВСЕГДА пропускаем если активна викторина
+    if 'quiz_questions' in context.user_data:
+        # Но проверяем, не является ли это кнопкой отмены
+        if user_message in ["🔙 Отмена", "🔙 отмена"]:
+            return False  # Пропускаем обработку как вопроса, чтобы handle_message обработал отмену
+        return False
     
     # Пропускаем команды
     if user_message.startswith('/'):
         return False
     
-    # Пропускаем кнопки меню
+    # Пропускаем ВСЕ кнопки меню (оригинальный текст как в show_tips_menu)
     menu_items = [
-        "💡 советы", "🌍 факты", "🎮 викторина", "🏆 челлендж", 
-        "📚 ссылки", "ℹ️ о проекте", "🔙 назад", "🔙 отмена",
-        "⚡ электричество", "💧 вода", "🔥 отопление", "📺 приборы",
-        "🚗 транспорт", "🏫 школа"
+        "💡 Советы", "🌍 Факты", "🎮 Викторина", "🏆 Челлендж", 
+        "📚 Ссылки", "ℹ️ О проекте", "🔙 Назад", "🔙 Отмена",
+        "⚡ Электричество", "💧 Вода", "🔥 Отопление", "📺 Приборы",
+        "🚗 Транспорт", "🏫 Школа"
     ]
     if user_message in menu_items:
         return False
     
-    # Если активна викторина - пропускаем обработку как вопроса
-    if 'quiz_questions' in context.user_data:
-        current_index = context.user_data.get('quiz_index', 0)
-        quiz_questions = context.user_data.get('quiz_questions', [])
-        
-        # Проверяем, является ли сообщение ответом на вопрос викторины
-        if current_index < len(quiz_questions):
-            # Это может быть ответ на викторину (цифра 1, 2, 3 или "🔙 отмена")
-            if user_message in ['1', '2', '3', '4', '🔙 отмена']:
-                return False
-            # Или текст кнопки отмены
-            if user_message == '🔙 отмена':
-                return False
+    user_message_lower = user_message.lower()
     
-    # Проверяем, является ли сообщение вопросом (содержит вопросительные слова)
+    # Проверяем, является ли сообщение вопросом
     question_words = ['как', 'что', 'почему', 'зачем', 'когда', 'где', 'куда', 'откуда', 'сколько', 'чей', 'чем']
-    has_question_word = any(word in user_message for word in question_words)
+    has_question_word = any(word in user_message_lower for word in question_words)
     has_question_mark = '?' in user_message
     
     # Если нет признаков вопроса - не обрабатываем как вопрос
@@ -587,7 +588,7 @@ async def handle_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Ищем тему по ключевым словам
     found_topic = None
     for topic, keywords in KEYWORDS.items():
-        if any(keyword in user_message for keyword in keywords):
+        if any(keyword in user_message_lower for keyword in keywords):
             found_topic = topic
             break
     
@@ -748,6 +749,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
