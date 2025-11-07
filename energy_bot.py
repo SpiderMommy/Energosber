@@ -348,7 +348,16 @@ def run_bot():
         # Добавляем обработчики
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
+        application.add_handler(CommandHandler("tips", tips_command))
+        application.add_handler(CommandHandler("facts", facts_command))
+        application.add_handler(CommandHandler("quiz", quiz_command))
+        application.add_handler(CommandHandler("challenge", challenge_command))
+        application.add_handler(CommandHandler("links", links_command))
+        application.add_handler(CommandHandler("about", about_command))
         application.add_handler(CommandHandler("ping", ping_command))
+        application.add_handler(CommandHandler("wakeup", wakeup_command))
+        
+        # Обработчик текстовых сообщений (для кнопок)
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         application.add_error_handler(error_handler)
         
@@ -382,6 +391,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
