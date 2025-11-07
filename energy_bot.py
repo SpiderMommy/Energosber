@@ -672,6 +672,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "Используй кнопки меню, команды или задай вопрос текстом!\n\n"
                 "Например: 'Как экономить воду?' или 'Что такое энергосбережение?'"
             )
+            
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик ошибок с игнорированием конфликтов"""
     error = context.error
@@ -756,5 +757,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
