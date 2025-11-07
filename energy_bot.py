@@ -316,6 +316,7 @@ async def show_tips_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tips_keyboard = [
         [KeyboardButton("⚡ Электричество"), KeyboardButton("💧 Вода")],
         [KeyboardButton("🔥 Отопление"), KeyboardButton("📺 Приборы")],
+        [KeyboardButton("🚗 Транспорт"), KeyboardButton("🏫 Школа")],
         [KeyboardButton("🔙 Назад")]
     ]
     reply_markup = ReplyKeyboardMarkup(tips_keyboard, resize_keyboard=True)
@@ -327,7 +328,9 @@ async def show_tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "⚡ Электричество": "электричество",
         "💧 Вода": "вода", 
         "🔥 Отопление": "отопление",
-        "📺 Приборы": "приборы"
+        "📺 Приборы": "приборы",
+        "🚗 Транспорт": "транспорт",
+        "🏫 Школа": "школа"
     }
     
     if text in category_map:
@@ -337,7 +340,7 @@ async def show_tips(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(tips_text)
     else:
         await update.message.reply_text("Пожалуйста, выбери категорию из меню")
-
+        
 async def show_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     fact = random.choice(FACTS)
     await update.message.reply_text(fact)
@@ -716,6 +719,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
