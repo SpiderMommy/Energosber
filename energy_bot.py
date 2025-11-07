@@ -546,30 +546,43 @@ async def about_project(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     await update.message.reply_text(about_text)
 
-async def handle_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработка текстовых вопросов пользователя"""
-    user_message = update.message.text.strip()
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
     
-    # ВСЕГДА пропускаем если активна викторина
+    # Сначала проверяем викторину
     if 'quiz_questions' in context.user_data:
-        # Но проверяем, не является ли это кнопкой отмены
-        if user_message in ["🔙 Отмена", "🔙 отмена"]:
-            return False  # Пропускаем обработку как вопроса, чтобы handle_message обработал отмену
-        return False
+        if text in ["🔙 Отмена", "🔙 отмена"]:
+            await start(update, context)
+            return
+        elif text.isdigit():
+            await handle_quiz_answer(update, context)
+            return
     
-    # Пропускаем команды
-    if user_message.startswith('/'):
-        return False
-    
-    # Пропускаем ВСЕ кнопки меню (оригинальный текст как в show_tips_menu)
-    menu_items = [
-        "💡 Советы", "🌍 Факты", "🎮 Викторина", "🏆 Челлендж", 
-        "📚 Ссылки", "ℹ️ О проекте", "🔙 Назад", "🔙 Отмена",
-        "⚡ Электричество", "💧 Вода", "🔥 Отопление", "📺 Приборы",
-        "🚗 Транспорт", "🏫 Школа"
-    ]
-    if user_message in menu_items:
-        return False
+    # Затем проверяем кнопки меню
+    if text == "💡 Советы":
+        await show_tips_menu(update, context)
+    elif text == "🌍 Факты":
+        await show_fact(update, context)
+    elif text == "🎮 Викторина":
+        await start_quiz(update, context)
+    elif text == "🏆 Челлендж":
+        await start_challenge(update, context)
+    elif text == "📚 Ссылки":
+        await show_links(update, context)
+    elif text == "ℹ️ О проекте":
+        await about_project(update, context)
+    elif text in ["⚡ Электричество", "💧 Вода", "🔥 Отопление", "📺 Приборы", "🚗 Транспорт", "🏫 Школа"]:
+        await show_tips(update, context)
+    elif text == "🔙 Назад":
+        await start(update, context)
+    else:
+        # Только если не кнопка и не викторина - обрабатываем как вопрос
+        is_question = await handle_question(update, context)
+        if not is_question:
+            await update.message.reply_text(
+                "Используй кнопки меню, команды или задай вопрос текстом!\n\n"
+                "Например: 'Как экономить воду?' или 'Что такое энергосбережение?'"
+            )
     
     user_message_lower = user_message.lower()
     
@@ -749,6 +762,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
