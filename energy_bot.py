@@ -5,6 +5,7 @@ import asyncio
 import aiohttp
 import threading
 import time
+from flask import Flask
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 # Создаем Flask приложение для здоровья сервиса
@@ -344,5 +345,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
