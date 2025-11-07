@@ -542,14 +542,43 @@ async def about_project(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка текстовых вопросов пользователя"""
-    user_question = update.message.text.lower().strip()
+    user_message = update.message.text.lower().strip()
     
-    # Пропускаем команды и кнопки
-    if user_question.startswith('/') or user_question in [
+    # Пропускаем команды
+    if user_message.startswith('/'):
+        return False
+    
+    # Пропускаем кнопки меню
+    menu_items = [
         "💡 советы", "🌍 факты", "🎮 викторина", "🏆 челлендж", 
         "📚 ссылки", "ℹ️ о проекте", "🔙 назад", "🔙 отмена",
-        "⚡ электричество", "💧 вода", "🔥 отопление", "📺 приборы"
-    ]:
+        "⚡ электричество", "💧 вода", "🔥 отопление", "📺 приборы",
+        "🚗 транспорт", "🏫 школа"
+    ]
+    if user_message in menu_items:
+        return False
+    
+    # Если активна викторина - пропускаем обработку как вопроса
+    if 'quiz_questions' in context.user_data:
+        current_index = context.user_data.get('quiz_index', 0)
+        quiz_questions = context.user_data.get('quiz_questions', [])
+        
+        # Проверяем, является ли сообщение ответом на вопрос викторины
+        if current_index < len(quiz_questions):
+            # Это может быть ответ на викторину (цифра 1, 2, 3 или "🔙 отмена")
+            if user_message in ['1', '2', '3', '4', '🔙 отмена']:
+                return False
+            # Или текст кнопки отмены
+            if user_message == '🔙 отмена':
+                return False
+    
+    # Проверяем, является ли сообщение вопросом (содержит вопросительные слова)
+    question_words = ['как', 'что', 'почему', 'зачем', 'когда', 'где', 'куда', 'откуда', 'сколько', 'чей', 'чем']
+    has_question_word = any(word in user_message for word in question_words)
+    has_question_mark = '?' in user_message
+    
+    # Если нет признаков вопроса - не обрабатываем как вопрос
+    if not (has_question_word or has_question_mark):
         return False
     
     # Показываем статус "печатает"
@@ -558,7 +587,7 @@ async def handle_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Ищем тему по ключевым словам
     found_topic = None
     for topic, keywords in KEYWORDS.items():
-        if any(keyword in user_question for keyword in keywords):
+        if any(keyword in user_message for keyword in keywords):
             found_topic = topic
             break
     
@@ -719,6 +748,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
