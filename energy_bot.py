@@ -336,7 +336,30 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Используй кнопки меню или /help для помощи!")
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.error(f"Ошибка: {context.error}")
+    """Обработчик ошибок с игнорированием конфликтов"""
+    error = context.error
+    
+    # Игнорируем ошибку конфликта (множественные экземпляры)
+    if "terminated by other getUpdates request" in str(error):
+        logger.warning("⚠️ Обнаружено несколько экземпляров бота, игнорируем конфликт")
+        return
+    
+    # Игнорируем ошибки связанные с недоступностью бота
+    if "Conflict" in str(error) or "RetryAfter" in str(error):
+        logger.warning(f"⚠️ Временная ошибка Telegram: {error}")
+        return
+    
+    # Логируем остальные ошибки
+    logger.error(f"❌ Ошибка: {error}")
+    
+    # Уведомляем пользователя только о критических ошибках
+    if update and update.effective_message:
+        try:
+            await update.effective_message.reply_text(
+                "❌ Произошла ошибка. Попробуйте еще раз через несколько секунд."
+            )
+        except Exception:
+            pass  # Игнорируем ошибки отправки сообщений
 
 def run_bot():
     print("🚀 Запуск бота Энергосберегайка...")
@@ -373,8 +396,14 @@ def run_bot():
         print("📍 Работает на Render.com")
         print("⚡ Готов к приему сообщений")
         print("=" * 50)
+
+        print("🔄 Настройка graceful shutdown...")
         
-        application.run_polling()
+         application.run_polling(
+            allowed_updates=Update.ALL_TYPES,
+            drop_pending_updates=True,
+            close_loop=False
+        )
         
     except Exception as e:
         print(f"❌ Ошибка при запуске бота: {e}")
@@ -391,8 +420,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
