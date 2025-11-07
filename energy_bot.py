@@ -1,11 +1,12 @@
 import os
 import logging
 import random
+import asyncio
+import aiohttp
 import threading
-from flask import Flask
+import time
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-
 # Создаем Flask приложение для здоровья сервиса
 app = Flask(__name__)
 
@@ -25,7 +26,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 # Токен бота
 BOT_TOKEN = "7833930614:AAET_Lq5B4itg-1Dwzi2Ne3g-UylYK9jUQE"
-
+# URL сервиса
+RENDER_URL = "https://energosber.onrender.com"
 # Данные бота
 ENERGY_TIPS = {
     "электричество": [
@@ -66,6 +68,26 @@ FACTS = [
     "🔋 Батарейки, выброшенные в природу, загрязняют 20 м² земли!"
 ]
 
+# Функция для пинга сервиса (чтобы не засыпал)
+async def keep_alive_ping():
+    """Периодически пингует сервис чтобы не засыпал"""
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(RENDER_URL, timeout=10) as response:
+                    logger.info(f"✅ Пинг успешен: {response.status}")
+        except Exception as e:
+            logger.warning(f"⚠️ Пинг не удался: {e}")
+        
+        # Ждем 10 минут между пингами
+        await asyncio.sleep(600)  # 10 минут
+
+def start_keep_alive():
+    """Запускает пинг в отдельном потоке"""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(keep_alive_ping())
+
 # Команды бота
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -99,6 +121,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Или используй кнопки меню!
     """
     await update.message.reply_text(help_text)
+
+async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для проверки работы бота"""
+    await update.message.reply_text("✅ Бот активен и работает!")
 
 async def show_tips_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tips_keyboard = [
@@ -284,8 +310,15 @@ def run_bot():
         # Добавляем обработчики
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("help", help_command))
+        application.add_handler(CommandHandler("ping", ping_command))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         application.add_error_handler(error_handler)
+        
+        # Запускаем пинг в отдельном потоке
+        if RENDER_URL and not RENDER_URL.startswith("https://energy-saving-bot"):
+            ping_thread = threading.Thread(target=start_keep_alive, daemon=True)
+            ping_thread.start()
+            print("🔔 Запущена система автоматического пробуждения")
         
         # Запускаем бота
         print("=" * 50)
@@ -311,4 +344,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
