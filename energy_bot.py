@@ -117,15 +117,52 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 📖 Доступные команды:
 
 /start - Запустить бота
+/tips - Советы по энергосбережению
+/facts - Интересные факты
+/quiz - Игра-викторина
+/challenge - Эко-челлендж
+/links - Полезные ссылки
+/about - О проекте
 /help - Помощь
 
 Или используй кнопки меню!
     """
     await update.message.reply_text(help_text)
 
+async def tips_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /tips - показывает меню советов"""
+    await show_tips_menu(update, context)
+
+async def facts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /facts - показывает случайный факт"""
+    await show_fact(update, context)
+
+async def quiz_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /quiz - запускает викторину"""
+    await start_quiz(update, context)
+
+async def challenge_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /challenge - запускает челлендж"""
+    await start_challenge(update, context)
+
+async def links_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /links - показывает полезные ссылки"""
+    await show_links(update, context)
+
+async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда /about - информация о проекте"""
+    await about_project(update, context)
+
 async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Команда для проверки работы бота"""
     await update.message.reply_text("✅ Бот активен и работает!")
+
+async def wakeup_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Команда для пробуждения бота"""
+    await update.message.reply_text(
+        "🔔 Бот пробужден и готов к работе!\n\n"
+        "Если я снова усну, просто отправь /wakeup или /start 😴"
+    )
 
 async def show_tips_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tips_keyboard = [
@@ -345,6 +382,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
 
